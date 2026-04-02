@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ModKit — Car Mod Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E02020;
+    --red-dark: #B01818;
+    --red-glow: rgba(224,32,32,0.15);
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --surface3: #222222;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --text-dim: #555;
+    --font-display: 'Barlow Condensed', sans-serif;
+    --font-body: 'Barlow', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG grid lines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(42px, 7vw, 72px);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 span { color: var(--red); }
+
+  .tagline {
+    font-size: 16px;
+    color: var(--text-muted);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+  }
+
+  /* FORM */
+  .search-section {
+    padding: 48px 0 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 120px auto;
+    gap: 12px;
+    align-items: end;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  label {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  input, select {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    width: 100%;
+    height: 46px;
+  }
+
+  input::placeholder { color: var(--text-dim); }
+
+  input:focus, select:focus {
+    border-color: var(--red);
+    background: var(--surface3);
+  }
+
+  select option { background: #1a1a1a; }
+
+  .search-btn {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    height: 46px;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .search-btn:hover { background: var(--red-dark); }
+  .search-btn:active { transform: scale(0.98); }
+  .search-btn:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+
+  .category-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+
+  .pill {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .pill:hover, .pill.active {
+    background: var(--red-glow);
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* RESULTS */
+  .results-section {
+    padding: 48px 0;
+  }
+
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 32px;
+  }
+
+  .results-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .results-meta {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* MOD CARD */
+  .mod-grid {
+    display: grid;
+    gap: 2px;
+  }
+
+  .mod-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    animation: slideIn 0.3s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .mod-card:hover { border-color: var(--border2); }
+
+  .mod-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .mod-rank {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text-dim);
+    width: 40px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .mod-info { flex: 1; min-width: 0; }
+
+  .mod-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mod-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 100px;
+  }
+
+  .tag-category { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+  .tag-difficulty-easy { background: rgba(52,199,89,0.12); color: #34C759; }
+  .tag-difficulty-medium { background: rgba(255,159,10,0.12); color: #FF9F0A; }
+  .tag-difficulty-hard { background: rgba(224,32,32,0.15); color: #E02020; }
+
+  .mod-cost {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .chevron {
+    font-size: 18px;
+    color: var(--text-dim);
+    transition: transform 0.25s;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  .mod-card.open .chevron { transform: rotate(180deg); }
+  .mod-card.open .mod-rank { color: var(--red); }
+
+  .mod-body {
+    display: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .mod-card.open .mod-body { display: block; }
+
+  .mod-content {
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .section-label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 10px;
+  }
+
+  .description {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #ccc;
+  }
+
+  .steps-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .step-item {
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+    color: #ccc;
+    line-height: 1.5;
+  }
+
+  .step-num {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--red);
+    background: var(--red-glow);
+    border: 1px solid rgba(224,32,32,0.3);
+    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .tools-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .tool-item {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tool-item::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 4px;
+    background: var(--text-dim);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .warning-box {
+    background: rgba(255,159,10,0.07);
+    border: 1px solid rgba(255,159,10,0.2);
+    border-radius: 4px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+
+  .warning-box strong {
+    color: #FF9F0A;
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* STATES */
+  .loading-state, .empty-state, .error-state {
+    text-align: center;
+    padding: 80px 0;
+  }
+
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 2px solid var(--border);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 24px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state p {
+    font-family: var(--font-display);
+    font-size: 14px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .empty-state .big-text {
+    font-family: var(--font-display);
+    font-size: clamp(60px, 12vw, 120px);
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--surface3);
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .empty-state p { font-size: 15px; color: var(--text-muted); }
+
+  .error-state p {
+    font-size: 15px;
+    color: #E02020;
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+  }
+
+  @media (max-width: 700px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid .search-btn { grid-column: span 2; }
+    .mod-content { grid-template-columns: 1fr; }
+    .mod-cost { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="logo">ModKit</div>
+    <h1>Find Your<br><span>Perfect Mods</span></h1>
+    <p class="tagline">Enter your car. Get AI-powered modification suggestions with step-by-step install guides.</p>
+  </header>
+
+  <section class="search-section">
+    <div class="form-grid">
+      <div class="field">
+        <label>Make</label>
+        <input type="text" id="make" placeholder="e.g. Toyota" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Model</label>
+        <input type="text" id="model" placeholder="e.g. GR86" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Year</label>
+        <input type="text" id="year" placeholder="2022" maxlength="4" autocomplete="off" />
+      </div>
+      <button class="search-btn" id="searchBtn" onclick="searchMods()">Find Mods →</button>
+    </div>
+
+    <div class="category-pills">
+      <div class="pill active" onclick="togglePill(this)" data-cat="all">All Mods</div>
+      <div class="pill" onclick="togglePill(this)" data-cat="performance">Performance</div>
+      <div class="pill" onclick="togglePill(this)" data-cat="suspension">Suspension</div>
+      <div class="pill" onclick="togglePill(this)" data-cat="exhaust">Exhaust</div>
+      <div class="pill" onclick="togglePill(this)" data-cat="intake">Intake</div>
+      <div class="pill" onclick="togglePill(this)" data-cat="brakes">Brakes</div>
+      <div class="pill" onclick="togglePill(this)" data-cat="exterior">Exterior</div>
+      <div class="pill" onclick="togglePill(this)" data-cat="interior">Interior</div>
+    </div>
+  </section>
+
+  <section class="results-section" id="resultsSection">
+    <div class="empty-state">
+      <div class="big-text">Build<br>Mode</div>
+      <p>Enter your car above to get started.</p>
+    </div>
+  </section>
+
+  <footer>Powered by Claude AI — Results are AI-generated. Always verify compatibility before installation.</footer>
+
+</div>
+
+<script>
+  let currentFilter = 'all';
+  let currentMods = [];
+
+  function togglePill(el) {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    currentFilter = el.dataset.cat;
+    if (currentMods.length) renderMods(currentMods);
+  }
+
+  document.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') searchMods(); });
+  });
+
+  async function searchMods() {
+    const make = document.getElementById('make').value.trim();
+    const model = document.getElementById('model').value.trim();
+    const year = document.getElementById('year').value.trim();
+
+    if (!make || !model || !year) {
+      alert('Please fill in make, model, and year.');
+      return;
+    }
+
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true;
+    btn.textContent = 'Searching...';
+
+    showLoading(make, model, year);
+
+    const filterHint = currentFilter !== 'all' ? ` Focus specifically on ${currentFilter} mods.` : '';
+
+    const prompt = `You are a car modification expert. Suggest 6 excellent modifications for a ${year} ${make} ${model}.${filterHint}
+
+Respond ONLY with a JSON array (no markdown, no explanation). Each object:
+{
+  "title": "Mod name",
+  "category": "performance|suspension|exhaust|intake|brakes|exterior|interior",
+  "difficulty": "Easy|Medium|Hard",
+  "cost": "$XX–$XX",
+  "description": "2-3 sentences on what this mod does and why it's great for this car.",
+  "steps": ["Step 1 text", "Step 2 text", "Step 3 text", "Step 4 text", "Step 5 text"],
+  "tools": ["Tool 1", "Tool 2", "Tool 3"],
+  "warning": "One safety or compatibility tip specific to this car and mod."
+}`;
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await resp.json();
+      const raw = data.content.map(b => b.text || '').join('');
+      const clean = raw.replace(/```json|```/g, '').trim();
+      currentMods = JSON.parse(clean);
+      renderMods(currentMods);
+    } catch(e) {
+      showError();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Find Mods →';
+    }
+  }
+
+  function showLoading(make, model, year) {
+    document.getElementById('resultsSection').innerHTML = `
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Analyzing ${year} ${make} ${model}...</p>
+      </div>`;
+  }
+
+  function showError() {
+    document.getElementById('resultsSection').innerHTML = `
+      <div class="error-state">
+        <p>Something went wrong. Please try again.</p>
+      </div>`;
+  }
+
+  function renderMods(mods) {
+    const filtered = currentFilter === 'all'
+      ? mods
+      : mods.filter(m => m.category.toLowerCase() === currentFilter);
+
+    const make = document.getElementById('make').value.trim();
+    const model = document.getElementById('model').value.trim();
+    const year = document.getElementById('year').value.trim();
+
+    const section = document.getElementById('resultsSection');
+
+    if (!filtered.length) {
+      section.innerHTML = `<div class="empty-state"><p>No ${currentFilter} mods found. Try a different category.</p></div>`;
+      return;
+    }
+
+    const cards = filtered.map((mod, i) => {
+      const diffClass = `tag-difficulty-${mod.difficulty.toLowerCase()}`;
+      const steps = (mod.steps || []).map((s, n) =>
+        `<li class="step-item"><span class="step-num">${n+1}</span><span>${s}</span></li>`
+      ).join('');
+      const tools = (mod.tools || []).map(t =>
+        `<div class="tool-item">${t}</div>`
+      ).join('');
+
+      return `
+      <div class="mod-card" id="card-${i}" style="animation-delay:${i*0.06}s">
+        <div class="mod-header" onclick="toggleCard(${i})">
+          <div class="mod-rank">${String(i+1).padStart(2,'0')}</div>
+          <div class="mod-info">
+            <div class="mod-title">${mod.title}</div>
+            <div class="mod-meta">
+              <span class="tag tag-category">${mod.category}</span>
+              <span class="tag ${diffClass}">${mod.difficulty}</span>
+            </div>
+          </div>
+          <div class="mod-cost">${mod.cost || ''}</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="mod-body">
+          <div class="mod-content">
+            <div>
+              <div class="section-label">About this mod</div>
+              <p class="description">${mod.description}</p>
+              ${mod.warning ? `<div class="warning-box"><strong>⚠ Note</strong>${mod.warning}</div>` : ''}
+            </div>
+            <div>
+              <div class="section-label">Installation steps</div>
+              <ol class="steps-list">${steps}</ol>
+              ${tools ? `<div style="margin-top:20px"><div class="section-label">Tools needed</div><div class="tools-list">${tools}</div></div>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    section.innerHTML = `
+      <div class="results-header">
+        <div class="results-title">${year} ${make} ${model} Mods</div>
+        <div class="results-meta">${filtered.length} suggestions</div>
+      </div>
+      <div class="mod-grid">${cards}</div>`;
+  }
+
+  function toggleCard(i) {
+    const card = document.getElementById(`card-${i}`);
+    card.classList.toggle('open');
+  }
+</script>
+</body>
+</html>
