@@ -587,18 +587,16 @@ Respond ONLY with a JSON array (no markdown, no explanation). Each object:
 }`;
 
     try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
+      const resp = await fetch('/api/chat', {
+         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }]
+            messages: [{ role: 'user', content: prompt }]
         })
-      });
+    });
 
-      const data = await resp.json();
-      const raw = data.content.map(b => b.text || '').join('');
+    const data = await resp.json();
+    const raw = data.choices[0].message.content;
       const clean = raw.replace(/```json|```/g, '').trim();
       currentMods = JSON.parse(clean);
       renderMods(currentMods);
